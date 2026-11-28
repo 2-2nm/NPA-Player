@@ -3,9 +3,10 @@ from pathlib import Path
 
 from PySide6.QtCore import QEvent, QPoint, QRect, QTimer, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout
 
 from app import config
+from ui import theme
 from data.db import Database
 from services.collection_service import (PLAYLIST_EMPTY, SMART_EMPTY, SMART_NAMES, CollectionService)
 from domain.folder import is_under
@@ -26,6 +27,7 @@ from ui.pages.now_playing import NowPlayingPage, audio_info
 from ui.pages.playlists import CollectionPage, PlaylistsPage
 from ui.pages.playlists.dialogs import confirm
 from ui.pages.playlists.cover import custom_pixmap, mosaic_tracks, playlist_tint
+from ui.pages.settings import SettingsPage
 from ui.shell import frameless
 from ui.shell.backdrop import Backdrop
 from ui.shell.cover_flight import CoverFlight
@@ -60,6 +62,8 @@ class MainWindow(WindowStateMixin, QMainWindow):
         self.resize(1210, 756)
         self.setMinimumSize(980, 620)
         self.settings = config.new_settings()
+        self._glow = self.settings.value("appearance/cover_glow", True, type=bool)       # Settings page
+        self._restore = self.settings.value("playback/restore_session", True, type=bool)  # Settings page
         self._restore_window_state()  # remembered size / position / maximized, like NPI Gallery
         self.db = Database()
         self.library = LibraryService(self.db, self)
@@ -141,9 +145,13 @@ class MainWindow(WindowStateMixin, QMainWindow):
         self.playlists_page = PlaylistsPage()
         self.collection_page = CollectionPage()
         self.folders_page = FoldersPage()
+        self.settings_page = SettingsPage()
+        self.settings_page.set_values(self._glow, self._restore)
+        self.settings_page.set_accent(theme.CHOSEN)
+        self.settings_page.set_data_dir(str(config.data_dir()))
         self.pages = FadeStack(duration=260)  # fade_to() is used when the cover flies between a page and Player
         for page in (self.lib_page, self.now_page, self.playlists_page, self.collection_page,
-                     self.folders_page):  # order = Page
+                     self.folders_page, self.settings_page):  # order = Page
             self.pages.addWidget(page)
         right.addWidget(self.pages, 1)
         right.addSpacing(4)  # keep the gap between the list fade and the mini player small
@@ -241,6 +249,12 @@ class MainWindow(WindowStateMixin, QMainWindow):
 
     def _wire_navigation(self):
         self.sidebar.pageSelected.connect(self._on_page)
+        sp = self.settings_page
+        sp.coverGlowChanged.connect(self._set_glow)
+        sp.accentChanged.connect(self._set_accent)
+        sp.restoreChanged.connect(lambda on: self._set_restore(on))
+        sp.openFoldersRequested.connect(self.sidebar.nav_folders.click)
+        sp.openDataFolderRequested.connect(self._open_data_folder)
 
     # ---------- data ----------
     def _schedule_reload(self):
@@ -254,6 +268,7 @@ class MainWindow(WindowStateMixin, QMainWindow):
         self._artists = self.collections.artists(self._albums)
         self.artists_view.set_artists(self._artists, self.library.play_stats())
         self._refresh_lib_subtitle()
+        self.settings_page.set_library_info(len(self._all), len(self._albums), len(self._artists))
         self.recent.set_tracks(self.collections.recent_albums(self._all))
         self._refresh_playlists()
         self._refresh_folders()
@@ -475,6 +490,8 @@ class MainWindow(WindowStateMixin, QMainWindow):
         elif page == Page.FOLDERS:
             self.header.set_page("Folders", self._folders_subtitle(), tabs=False, search=False)
             self._refresh_folders()
+        elif page == Page.SETTINGS:
+            self.header.set_page("Settings", "Preferences", tabs=False, search=False)
         else:
             self.header.set_page("Library")
         backdrop.set_tint(self._page_tint(), glide=True)
@@ -482,6 +499,8 @@ class MainWindow(WindowStateMixin, QMainWindow):
     def _page_tint(self):
         """Glow colour of the page on screen: the player's own colour on Player, the cover colour of the playlist
         on its page (the playing track's colour while that has no cover), the playing track's colour elsewhere."""
+        if not self._glow:  # Settings: cover colour glow switched off
+            return None
         if self._page == Page.PLAYER:
             return self.now_page.accent
         if self._page == Page.COLLECTION and self._coll_tint is not None:
@@ -490,7 +509,7 @@ class MainWindow(WindowStateMixin, QMainWindow):
 
     def _library_tint(self):
         """The Library follows the playing track's colour too; with nothing loaded it keeps the plain backdrop."""
-        return self.now_page.accent if self.player.current else None
+        return self.now_page.accent if (self.player.current and self._glow) else None
 
     def _on_accent(self, color):
         self.card.set_accent(self._library_tint())  # Continue listening follows the cover colour too
@@ -526,7 +545,35 @@ class MainWindow(WindowStateMixin, QMainWindow):
         self.card.set_progress(pos, dur)
         self.play_tracker.update(cur, pos, dur)
 
+    # ---------- settings ----------
+    def _set_glow(self, on: bool):
+        self._glow = on
+        self.settings.setValue("appearance/cover_glow", on)
+        self.card.set_accent(self._library_tint())
+        self.centralWidget().set_tint(self._page_tint(), glide=True)
+
+    def _set_accent(self, color: str):
+        """Settings: a new accent colour for the whole app."""
+        chosen = theme.set_accent(color)
+        self.settings.setValue("appearance/accent", chosen)
+        self.settings_page.set_accent(chosen)
+        app = QApplication.instance()
+        app.setStyleSheet(theme.style())  # the colours that live in style sheets (selection, focus, pill)
+        for w in app.allWidgets():  # everything painted by hand reads theme.ACCENT again
+            w.update()
+
+    def _set_restore(self, on: bool):
+        self._restore = on
+        self.settings.setValue("playback/restore_session", on)
+
+    def _open_data_folder(self):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(config.data_dir())))
+
     def _restore_last(self):
+        if not self._restore:  # Settings: start with an empty queue
+            return
         pos = self.session.restore(self._all, self.model.visible_tracks())
         if pos is not None:
             self._on_position(pos)

@@ -1,6 +1,7 @@
 from PySide6.QtCore import QEasingCurve, QObject, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QColor, QImage
 
+from ui import theme
 from ui.rendering.accent import pick_accent
 from ui.rendering.cover_renderer import CoverRenderer
 
@@ -44,19 +45,22 @@ class TintFade(QObject):
     Cards use it for a background that follows the cover colour."""
     changed = Signal()
 
-    def __init__(self, parent, default: QColor, duration: int = 320):
+    def __init__(self, parent, default: QColor | None = None, duration: int = 320):
         super().__init__(parent)
-        self._default = QColor(default)
-        self.color = QColor(default)
-        self._a = self._b = QColor(default)
+        self._fixed = QColor(default) if default is not None else None  # None: the accent colour
+        self.color = self._default()
+        self._a = self._b = QColor(self.color)
         self._anim = QVariantAnimation(self, duration=duration)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(1.0)
         self._anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
         self._anim.valueChanged.connect(self._step)
 
+    def _default(self) -> QColor:
+        return QColor(self._fixed) if self._fixed is not None else QColor(theme.GRAD_A)
+
     def set_target(self, color: QColor | None, animate: bool = True):
-        goal = QColor(color) if color is not None else QColor(self._default)
+        goal = QColor(color) if color is not None else self._default()
         if self._anim.state() == QVariantAnimation.State.Running and goal == self._b:
             return
         self._anim.stop()

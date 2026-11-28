@@ -41,7 +41,7 @@ class TrackRow(QWidget):
         r = QRectF(self.rect())
         if self.current:
             p.setPen(Qt.NoPen)
-            p.setBrush(QColor(124, 156, 255, 56))
+            p.setBrush(theme.accent_color(56))
             p.drawRoundedRect(r, 12, 12)
         elif self.underMouse():
             p.setPen(Qt.NoPen)
@@ -82,7 +82,7 @@ class AlbumDetail(Card):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._tint = TintFade(self, QColor(79, 123, 255))  # the card follows the colour of the album cover
+        self._tint = TintFade(self)  # the card follows the colour of the album cover
         self._tint.changed.connect(self.update)
         self._rows: list[TrackRow] = []
         self.album: Album | None = None

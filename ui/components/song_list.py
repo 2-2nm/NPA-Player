@@ -7,6 +7,7 @@ from PySide6.QtGui import QColor, QFont, QImage, QLinearGradient, QPainter
 from PySide6.QtWidgets import (QAbstractItemView, QHBoxLayout, QLabel, QMenu, QPushButton,
                                QStyle, QStyledItemDelegate, QVBoxLayout, QWidget)
 
+from ui.components.animated_menu import AnimatedMenu
 from ui.components.track_list_model import TrackListModel
 from ui.rendering.cover_renderer import CoverRenderer
 from ui import theme
@@ -254,14 +255,14 @@ class SongList(QWidget):
         self.fade = FadeOverlay(self)
         self.fade.raise_()
 
-        # Sort menu
-        sort_menu = QMenu(self)
-        for key, label in self.sorts.items():
-            sort_menu.addAction(label, lambda checked=False, k=key: self._pick_sort(k))
-        self.sort_btn.setMenu(sort_menu)
-
-        # Filter menu (rebuilt each time it opens, from the formats currently in the library)
-        self.filter_menu = QMenu(self)
+        # Sort menu and Filter menu: drop-downs in the style of NPI Gallery, opened centred under their button.
+        # Both are rebuilt each time they open, so the check marks and the formats are always current.
+        self.sort_menu = AnimatedMenu(self)
+        self.sort_menu.centre_on(self.sort_btn)
+        self.sort_menu.aboutToShow.connect(self._build_sort_menu)
+        self.sort_btn.setMenu(self.sort_menu)
+        self.filter_menu = AnimatedMenu(self)
+        self.filter_menu.centre_on(self.filter_btn)
         self.filter_menu.aboutToShow.connect(self._build_filter_menu)
         self.filter_btn.setMenu(self.filter_menu)
 
@@ -291,16 +292,32 @@ class SongList(QWidget):
         self.sortPicked.emit(key)
 
     def _set_sort(self, key: str):
+        self._sort_key = key
         self.model.set_sort(key)
         self.sort_btn.setText(f"Sort: {self.sorts[key]}")
 
+    def _build_sort_menu(self):
+        self.sort_menu.clear()
+        current = getattr(self, "_sort_key", next(iter(self.sorts)))
+        for key, label in self.sorts.items():
+            self.sort_menu.add_choice(label, key == current, lambda k=key: self._pick_sort(k))
+
     def _build_filter_menu(self):
-        self.filter_menu.clear()
-        for fmt in self.model.available_formats():
-            a = self.filter_menu.addAction(fmt)
-            a.setCheckable(True)
-            a.setChecked(fmt in self.model.formats)
-            a.toggled.connect(lambda on, f=fmt: self._toggle_format(f, on))
+        menu = self.filter_menu
+        menu.clear()
+        formats = self.model.available_formats()
+        for fmt in formats:
+            on = fmt in self.model.formats
+            menu.add_choice(fmt, on, lambda f=fmt, on=on: self._toggle_format(f, not on))
+        if not formats:
+            menu.addAction("No songs yet").setEnabled(False)
+        elif self.model.formats:
+            menu.addSeparator()
+            menu.addAction("Clear filter").triggered.connect(lambda _=False: self._clear_filter())
+
+    def _clear_filter(self):
+        self.model.set_formats(set())
+        self.filter_btn.setText("Filter")
 
     def _toggle_format(self, fmt: str, on: bool):
         s = set(self.model.formats)

@@ -122,8 +122,9 @@ class Sidebar(Card):
         lay.addWidget(self.nav_folders)
 
         lay.addStretch(1)
-        appearance = NavItem("sun", "Appearance", checkable=False)
-        lay.addWidget(appearance)
+        self.nav_settings = NavItem("gear", "Settings")
+        self._group.addButton(self.nav_settings, Page.SETTINGS)
+        lay.addWidget(self.nav_settings)
         self._sync_labels()
 
     def set_counts(self, library: int, playlists: int):

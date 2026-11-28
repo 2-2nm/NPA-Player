@@ -104,7 +104,7 @@ class NameDialog(ThemedDialog):
         self.field.setFixedHeight(42)
         self.field.setMaxLength(60)
         self.field.setPlaceholderText("Playlist name")
-        self.field.setStyleSheet(FIELD_STYLE)
+        self.field.setStyleSheet(theme.accentize(FIELD_STYLE))
         self.body.addWidget(self.field)
         ok = self.add_buttons(ok_text)
         self.field.textChanged.connect(lambda t: ok.setEnabled(bool(t.strip())))
@@ -209,13 +209,13 @@ class EditPlaylistDialog(ThemedDialog):
         self.name.setFixedHeight(42)
         self.name.setMaxLength(60)
         self.name.setPlaceholderText("Playlist name")
-        self.name.setStyleSheet(FIELD_STYLE)
+        self.name.setStyleSheet(theme.accentize(FIELD_STYLE))
         self.desc = QPlainTextEdit(pl.description)
         self.desc.setPlaceholderText("Add an optional description")
-        self.desc.setStyleSheet(
+        self.desc.setStyleSheet(theme.accentize(
             "QPlainTextEdit{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);"
             "border-radius:18px;padding:8px 14px;color:#f3f5ff;font-size:15px;selection-background-color:#4f7bff;}"
-            "QPlainTextEdit:focus{border-color:rgba(124,156,255,0.7);}")
+            "QPlainTextEdit:focus{border-color:rgba(124,156,255,0.7);}"))
         self.desc.textChanged.connect(self._limit_desc)
 
         right = QVBoxLayout()

@@ -23,7 +23,7 @@ class _Pill(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         p.setPen(Qt.NoPen)
-        p.setBrush(QColor(124, 156, 255, 56))
+        p.setBrush(theme.accent_color(56))
         p.drawRoundedRect(self.rect(), 18, 18)
 
 

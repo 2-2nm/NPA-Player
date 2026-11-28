@@ -35,7 +35,7 @@ class PopRow(QWidget):
         r = QRectF(self.rect())
         if self.current or self.underMouse():
             p.setPen(Qt.NoPen)
-            p.setBrush(QColor(124, 156, 255, 56) if self.current else QColor(255, 255, 255, 14))
+            p.setBrush(theme.accent_color(56) if self.current else QColor(255, 255, 255, 14))
             p.drawRoundedRect(r, 14, 14)
         accent = QColor(theme.ACCENT)
         num = QRectF(22, 0, 30, r.height())

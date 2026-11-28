@@ -1,6 +1,8 @@
 11/28/2026
 - added "Folders" tab where you can organize your music/lyrics folder
 - reduce ram usage from 600MB to ~200MB and ~100MB idle
+- added settigs tab
+- you can scroll the albums to the hell (haven't fixed yet)
 
 11/27/2026 (0.1.42)
 - added "Albums" tab in the library

@@ -150,7 +150,7 @@ class NowPlayingPage(QWidget):
     # ---------- reactions ----------
     def _on_track(self, t):
         self.title.setText(t.title)
-        self.sub.setText(f"{t.artist} · {t.album}" if t.album else t.artist)
+        self.sub.setText(" · ".join(x for x in (t.artist, t.album, str(t.year) if t.year else "") if x))
         self.stage.set_track(t)
         self.wave.set_track(t)
         q = audio_info.quality(t)

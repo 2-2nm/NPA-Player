@@ -22,7 +22,7 @@ class ArtistHero(Card):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._tint = TintFade(self, QColor(60, 96, 235))  # the card follows the colour of the artist's cover
+        self._tint = TintFade(self)  # the card follows the colour of the artist's cover
         self._tint.changed.connect(self.update)
         self.artist: Artist | None = None
         self.setFixedHeight(HERO_H)

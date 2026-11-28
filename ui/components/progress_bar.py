@@ -8,10 +8,10 @@ from ui import theme
 class ProgressBar(QWidget):
     seekRequested = Signal(float)
 
-    def __init__(self, c1=theme.GRAD_A, c2=theme.GRAD_B, parent=None):
+    def __init__(self, c1=None, c2=None, parent=None):  # None: the accent colours (read while painting)
         super().__init__(parent)
         self._v = 0.0
-        self._c1, self._c2 = QColor(c1), QColor(c2)
+        self._c1, self._c2 = (QColor(c1) if c1 else None), (QColor(c2) if c2 else None)
         self._drag = False
         self.setFixedHeight(18)
         self.setCursor(Qt.PointingHandCursor)
@@ -32,8 +32,8 @@ class ProgressBar(QWidget):
         if self._v > 0:
             f = QRectF(g.x(), g.y(), max(4.0, g.width() * self._v), 4)
             grad = QLinearGradient(f.left(), 0, f.right(), 0)
-            grad.setColorAt(0, self._c1)
-            grad.setColorAt(1, self._c2)
+            grad.setColorAt(0, self._c1 or QColor(theme.GRAD_A))
+            grad.setColorAt(1, self._c2 or QColor(theme.GRAD_B))
             p.setBrush(grad)
             p.drawRoundedRect(f, 2, 2)
 

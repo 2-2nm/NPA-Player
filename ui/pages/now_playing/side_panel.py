@@ -69,7 +69,7 @@ class QueueDelegate(QStyledItemDelegate):
         p.setRenderHint(QPainter.Antialiasing)
         if current or (opt.state & QStyle.StateFlag.State_MouseOver):
             p.setPen(Qt.NoPen)
-            p.setBrush(QColor(124, 156, 255, 40) if current else QColor(255, 255, 255, 16))
+            p.setBrush(theme.accent_color(40) if current else QColor(255, 255, 255, 16))
             p.drawRoundedRect(QRectF(r), 14, 14)
         p.drawPixmap(r.x() + 8, r.y() + 8, CoverRenderer.pixmap(track, 44, 10))
         right = r.right() - 14

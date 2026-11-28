@@ -38,7 +38,6 @@ class WaveformSeek(QWidget):
         self._hover = -1.0
         self._drag = False
         self._peaks = _profile(0)
-        self._c1, self._c2 = QColor("#60a5fa"), QColor("#c084fc")
         self.setFixedHeight(height)
         self.setCursor(Qt.PointingHandCursor)
         self.setMouseTracking(True)
@@ -61,12 +60,13 @@ class WaveformSeek(QWidget):
         n = max(8, int(w // 9))
         cy = h / 2
         base, hover = QColor(255, 255, 255, 54), QColor(255, 255, 255, 96)
+        c1, c2 = QColor(theme.ACCENT), QColor(theme.ACCENT_B)  # the accent colour chosen in Settings
         for i in range(n):
             frac = i / (n - 1)
             x = bar / 2 + frac * (w - bar)
             bh = max(4.0, self._peaks[int(frac * (N - 1))] * (h - 4))
             if frac <= self._v:
-                color = _mix(self._c1, self._c2, frac)
+                color = _mix(c1, c2, frac)
             elif 0 <= self._hover and frac <= self._hover:
                 color = hover
             else:

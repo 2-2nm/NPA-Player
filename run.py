@@ -18,7 +18,8 @@ def main():
     app.setWindowIcon(app_icon())  # window, taskbar and Alt+Tab
     theme.load_fonts()
     app.setFont(theme.font(13))
-    app.setStyleSheet(theme.STYLE)
+    theme.set_accent(config.new_settings().value("appearance/accent", theme.DEFAULT_ACCENT))  # chosen in Settings
+    app.setStyleSheet(theme.style())
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

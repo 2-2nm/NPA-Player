@@ -118,6 +118,20 @@ def draw_icon(p: QPainter, name: str, r: QRectF, color: str, filled_color: str |
     elif name == "search":
         p.drawEllipse(pt(10.5, 10.5), 6.5 * u, 6.5 * u)
         p.drawLine(pt(15.3, 15.3), pt(20, 20))
+    elif name == "gear":
+        import math
+        path = QPainterPath()
+        pts = []
+        for i in range(8):  # eight teeth
+            base = i * math.pi / 4
+            for da, r in ((-0.30, 7.2), (-0.17, 9.7), (0.17, 9.7), (0.30, 7.2)):
+                pts.append(pt(12 + r * math.cos(base + da), 12 + r * math.sin(base + da)))
+        path.moveTo(pts[0])
+        for q in pts[1:]:
+            path.lineTo(q)
+        path.closeSubpath()
+        p.drawPath(path)
+        p.drawEllipse(pt(12, 12), 3 * u, 3 * u)
     elif name == "sun":
         p.drawEllipse(pt(12, 12), 4 * u, 4 * u)
         import math
